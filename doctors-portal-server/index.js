@@ -21,12 +21,45 @@ async function run() {
         const serviceCollection = client.db("doctors_portal").collection("services");
         const bookingCollection = client.db("doctors_portal").collection("bookings");
 
+        // 01. get all services
         app.get('/service', async(req, res) => {
             const query = {};
             const cursor = serviceCollection.find(query);
             const services = await cursor.toArray();
             res.send(services);
         });
+
+        // 03. get available slots | Find available time slots for a day
+        app.get('/available', async(req, res) => {
+          const date = req.query.date || 'Jan 7, 2023';
+
+          // step 1: get all services
+          const services = await serviceCollection.find().toArray();
+
+          // step 2: get the booking of that day | get all booked services
+          const query = {date: date};
+          const bookings = await bookingCollection.find(query).toArray();
+
+          // step 3: for each service, find bookings for that service
+          services.forEach(service => {
+            // Booked Service
+            const serviceBookings = bookings.filter(b => b.treatment === service.name);
+
+            // Booked Slots
+            const booked = serviceBookings.map(s => s.slot);
+            service.booked = booked;
+
+            // service.booked = serviceBookings.map(s => s.slot);
+
+            // Available Slots (Search Keyword: JavaScript algorithm to file elements from ane array that do not exist in another array)
+            const available = service.slots.filter(s => !booked.includes(s));
+
+            service.available = available;            
+            // Each service: {_id, name, slots, booked, available}
+          });
+
+          res.send(services);
+        })
 
         /* 
             *** API Naming Convention ***
@@ -38,6 +71,7 @@ async function run() {
             - app.delete('/booking/:id') // specific one
         */
 
+        // 02. get all booked services
         app.post('/booking', async(req, res) => {
           const booking = req.body;
           const query = {treatment: booking.treatment, date: booking.date, patient: booking.patient};
