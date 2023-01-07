@@ -62,7 +62,7 @@ async function run() {
 
         /* step 7: set available to slots to make it easier */
         // service.available = available;
-        service.slots = available;     
+        service.slots = available;
         // Output of each service: {_id, name, slots, booked, available}
       });
 
@@ -78,6 +78,14 @@ async function run() {
         - app.patch('/booking/:id') // specific one
         - app.delete('/booking/:id') // specific one
     */
+
+    // 04. get all user specific Appointments or booking data
+    app.get('/booking', async (req, res) => {
+      const patient = req.query.patient;
+      const query = { patient: patient };
+      const bookings = await bookingCollection.find(query).toArray();
+      res.send(bookings);
+    });
 
     // 02. get all booked services
     app.post('/booking', async (req, res) => {
