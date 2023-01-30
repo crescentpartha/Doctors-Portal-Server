@@ -20,6 +20,7 @@ async function run() {
     // console.log('doctor_portal database connected');
     const serviceCollection = client.db("doctors_portal").collection("services");
     const bookingCollection = client.db("doctors_portal").collection("bookings");
+    const userCollection = client.db("doctors_portal").collection("users");
 
     // 01. get all services
     app.get('/service', async (req, res) => {
@@ -76,6 +77,7 @@ async function run() {
         - app.get('/booking/:id') // get a specific booking
         - app.post('/booking') // add a new booking
         - app.patch('/booking/:id') // specific one
+        - app.put('/booking/:id') // upsert ==> update (if exists) or insert (if doesn't exist)
         - app.delete('/booking/:id') // specific one
     */
 
@@ -98,6 +100,19 @@ async function run() {
       }
       const result = await bookingCollection.insertOne(booking);
       return res.send({ success: true, result });
+    });
+
+    // 05. User Creation Process | put user to userCollection
+    app.put('/user/:email', async(req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
     });
   }
   finally {
