@@ -15,6 +15,25 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nywkbwu.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+// Verify JWT Token and handle unauthorized access
+function verifyJWT(req, res, next) {
+  // console.log('abc');
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: 'UnAuthorized Access' });
+  }
+  const token = authHeader.split(' ')[1];
+  // verify a token symmetric
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden Access' });
+    }
+    // console.log(decoded);
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     await client.connect();
@@ -83,14 +102,21 @@ async function run() {
     */
 
     // 04. get all user specific Appointments or booking data
-    app.get('/booking', async (req, res) => {
-      const patient = req.query.patient;
+    app.get('/booking', verifyJWT, async (req, res) => {
       // Send JWT token to back end for verification
-      const authorization = req.headers.authorization;
-      console.log('auth header', authorization);
-      const query = { patient: patient };
-      const bookings = await bookingCollection.find(query).toArray();
-      res.send(bookings);
+      // const authorization = req.headers.authorization;
+      // console.log('auth header', authorization);
+
+      const patient = req.query.patient;
+      const decodedEmail = req.decoded.email;
+      if (patient === decodedEmail) {
+        const query = { patient: patient };
+        const bookings = await bookingCollection.find(query).toArray();
+        return res.send(bookings);
+      }
+      else {
+        return res.status(403).send({message: 'Forbidden Access'});
+      }
     });
 
     // 02. get all booked services
