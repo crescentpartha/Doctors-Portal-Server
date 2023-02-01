@@ -115,7 +115,7 @@ async function run() {
         return res.send(bookings);
       }
       else {
-        return res.status(403).send({message: 'Forbidden Access'});
+        return res.status(403).send({ message: 'Forbidden Access' });
       }
     });
 
@@ -130,6 +130,12 @@ async function run() {
       }
       const result = await bookingCollection.insertOne(booking);
       return res.send({ success: true, result });
+    });
+
+    // 06. get all users
+    app.get('/user', async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
     });
 
     // 05. User Creation Process | put user to userCollection
