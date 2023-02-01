@@ -85,6 +85,9 @@ async function run() {
     // 04. get all user specific Appointments or booking data
     app.get('/booking', async (req, res) => {
       const patient = req.query.patient;
+      // Send JWT token to back end for verification
+      const authorization = req.headers.authorization;
+      console.log('auth header', authorization);
       const query = { patient: patient };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings);
