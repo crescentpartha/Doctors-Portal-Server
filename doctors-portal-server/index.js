@@ -133,9 +133,20 @@ async function run() {
     });
 
     // 06. get all users
-    app.get('/user', async (req, res) => {
+    app.get('/user', verifyJWT, async (req, res) => {
       const users = await userCollection.find().toArray();
       res.send(users);
+    });
+
+    // 07. Create API to Make user an Admin
+    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: {role: 'admin'},
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
 
     // 05. User Creation Process | put user to userCollection
