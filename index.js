@@ -46,7 +46,8 @@ async function run() {
     // 01. get all services
     app.get('/service', async (req, res) => {
       const query = {};
-      const cursor = serviceCollection.find(query);
+      // const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection.find(query).project({name: 1}); // project select the particular table attribute
       const services = await cursor.toArray();
       res.send(services);
     });
