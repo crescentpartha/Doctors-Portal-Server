@@ -42,6 +42,7 @@ async function run() {
     const serviceCollection = client.db("doctors_portal").collection("services");
     const bookingCollection = client.db("doctors_portal").collection("bookings");
     const userCollection = client.db("doctors_portal").collection("users");
+    const doctorCollection = client.db("doctors_portal").collection("doctors");
 
     // 01. get all services
     app.get('/service', async (req, res) => {
@@ -179,6 +180,13 @@ async function run() {
       // Issue simple JWT token
       const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       res.send({ result, token });
+    });
+
+    // 09. Save doctor info in the database using post API
+    app.post('/doctor', async(req, res) => {
+      const doctor = req.body;
+      const result = await doctorCollection.insertOne(doctor);
+      res.send(result);
     });
   }
   finally {
