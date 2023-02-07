@@ -200,6 +200,12 @@ async function run() {
       const result = await doctorCollection.insertOne(doctor);
       res.send(result);
     });
+
+    // 11. get all doctors data using GET API
+    app.get('/doctor', verifyJWT, verifyAdmin, async(req, res) => {
+      const doctors = await doctorCollection.find().toArray();
+      res.send(doctors);
+    });
   }
   finally {
     // await client.close(); // commented, if I want to keep connection active;
