@@ -15,7 +15,7 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nywkbwu.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-// Verify JWT Token and handle unauthorized access
+// 04(ii). Verify JWT Token and handle unauthorized access | verifyJWT middleware
 function verifyJWT(req, res, next) {
   // console.log('abc');
   const authHeader = req.headers.authorization;
@@ -44,11 +44,23 @@ async function run() {
     const userCollection = client.db("doctors_portal").collection("users");
     const doctorCollection = client.db("doctors_portal").collection("doctors");
 
+    // 10. Verify user is admin or not? | verifyAdmin middleware implement
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        next();
+      }
+      else {
+        res.status(403).send({ message: 'Forbidden' });
+      }
+    }
+
     // 01. get all services
     app.get('/service', async (req, res) => {
       const query = {};
       // const cursor = serviceCollection.find(query);
-      const cursor = serviceCollection.find(query).project({name: 1}); // project select the particular table attribute
+      const cursor = serviceCollection.find(query).project({ name: 1 }); // project select the particular table attribute
       const services = await cursor.toArray();
       res.send(services);
     });
@@ -104,7 +116,7 @@ async function run() {
         - app.delete('/booking/:id') // specific one
     */
 
-    // 04. get all user specific Appointments or booking data
+    // 04(i). get all user specific Appointments or booking data
     app.get('/booking', verifyJWT, async (req, res) => {
       // Send JWT token to back end for verification
       // const authorization = req.headers.authorization;
@@ -150,21 +162,21 @@ async function run() {
     });
 
     // 07. Create API to Make user an Admin
-    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({ email: requester });
-      if (requesterAccount.role === 'admin') {
-        const filter = { email: email };
-        const updateDoc = {
-          $set: { role: 'admin' },
-        };
-        const result = await userCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      }
-      else {
-        res.status(403).send({ message: 'Forbidden' });
-      }
+      // const requester = req.decoded.email;
+      // const requesterAccount = await userCollection.findOne({ email: requester });
+      // if (requesterAccount.role === 'admin') {
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: 'admin' },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+      // }
+      // else {
+      //   res.status(403).send({ message: 'Forbidden' });
+      // }
     });
 
     // 05. User Creation Process | put user to userCollection
@@ -183,7 +195,7 @@ async function run() {
     });
 
     // 09. Save doctor info in the database using post API
-    app.post('/doctor', async(req, res) => {
+    app.post('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
       const doctor = req.body;
       const result = await doctorCollection.insertOne(doctor);
       res.send(result);
