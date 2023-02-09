@@ -206,6 +206,14 @@ async function run() {
       const doctors = await doctorCollection.find().toArray();
       res.send(doctors);
     });
+
+    // 12. delete particular doctor with authorization using DELETE API
+    app.delete('/doctor/:email', verifyJWT, verifyAdmin, async(req, res) => {
+      const email = req.params.email;
+      const filter = {email: email}; // find user
+      const result = await doctorCollection.deleteOne(filter);
+      res.send(result);
+    });
   }
   finally {
     // await client.close(); // commented, if I want to keep connection active;
