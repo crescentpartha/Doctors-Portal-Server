@@ -3,6 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
+// import modules for email sending
 const nodemailer = require('nodemailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
 
@@ -36,8 +37,49 @@ function verifyJWT(req, res, next) {
   });
 }
 
-function sendAppointmentEmail(email, name, date, slot){
+// where send email (permission of which user) | set options of email
+const emailSenderOptions = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_KEY
+  }
+}
 
+// set connection of client with clientEmail | connect client of email
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+
+// create function from where to send email
+function sendAppointmentEmail(booking) {
+  const { patient, patientName, treatment, date, slot } = booking;
+
+  // define email
+  const email = {
+    from: process.env.EMAIL_SENDER,
+    to: patient,
+    subject: `Your appointment for ${treatment} is on ${date} at ${slot} is confirmed`,
+    text: `Your appointment for ${treatment} is on ${date} at ${slot} is confirmed`,
+    html: `
+      <div>
+        <p>Hello ${patientName}, </p>
+        <h3>Your Appointment for ${treatment} is confirmed.</h3>
+        <p>Looking forward to seeing you on ${date} at ${slot}.</p>
+
+        <h3>Our Address</h3>
+        <p>Subidbazar, Sylhet</p>
+        <p>Bangladesh</p>
+        <a href="https://crescentpartha.com/">unsubscribe</a>
+      </div>
+    `
+  };
+
+  // send email
+  emailClient.sendMail(email, function (err, info) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      console.log('Message send:', info);
+    }
+  });
 }
 
 async function run() {
@@ -150,7 +192,9 @@ async function run() {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingCollection.insertOne(booking);
-      sendAppointmentEmail(booking.patient, booking.patientName, booking.date, booking.slot);
+      // sendAppointmentEmail(booking.patient, booking.patientName, booking.date, booking.slot);
+      console.log('sending email');
+      sendAppointmentEmail(booking);
       return res.send({ success: true, result });
     });
 
@@ -209,15 +253,15 @@ async function run() {
     });
 
     // 11. get all doctors data using GET API
-    app.get('/doctor', verifyJWT, verifyAdmin, async(req, res) => {
+    app.get('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
       const doctors = await doctorCollection.find().toArray();
       res.send(doctors);
     });
 
     // 12. delete particular doctor with authorization using DELETE API
-    app.delete('/doctor/:email', verifyJWT, verifyAdmin, async(req, res) => {
+    app.delete('/doctor/:email', verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      const filter = {email: email}; // find user
+      const filter = { email: email }; // find user
       const result = await doctorCollection.deleteOne(filter);
       res.send(result);
     });
