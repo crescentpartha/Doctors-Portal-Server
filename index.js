@@ -3,6 +3,8 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const nodemailer = require('nodemailer');
+const sgTransport = require('nodemailer-sendgrid-transport');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -32,6 +34,10 @@ function verifyJWT(req, res, next) {
     req.decoded = decoded;
     next();
   });
+}
+
+function sendAppointmentEmail(email, name, date, slot){
+
 }
 
 async function run() {
@@ -134,7 +140,7 @@ async function run() {
       }
     });
 
-    // 02. get all booked services
+    // 02. post a single booked service
     app.post('/booking', async (req, res) => {
       const booking = req.body;
       const query = { treatment: booking.treatment, date: booking.date, patient: booking.patient };
@@ -144,6 +150,7 @@ async function run() {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingCollection.insertOne(booking);
+      sendAppointmentEmail(booking.patient, booking.patientName, booking.date, booking.slot);
       return res.send({ success: true, result });
     });
 
