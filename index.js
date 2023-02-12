@@ -40,7 +40,7 @@ function verifyJWT(req, res, next) {
 // where send email (permission of which user) | set options of email
 const emailSenderOptions = {
   auth: {
-    api_key: process.env.EMAIL_SENDER_KEY
+    api_key: process.env.DOCTOR_PORTAL_EMAIL_SENDER_API_KEY
   }
 }
 
