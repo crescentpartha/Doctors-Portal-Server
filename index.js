@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // import modules for email sending
 const nodemailer = require('nodemailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
@@ -180,6 +180,14 @@ async function run() {
       else {
         return res.status(403).send({ message: 'Forbidden Access' });
       }
+    });
+
+    // 13. get appointment by Id using get API
+    app.get('/booking/:id', verifyJWT, async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: ObjectId(id)};
+      const booking = await bookingCollection.findOne(query);
+      res.send(booking);
     });
 
     // 02. post a single booked service
