@@ -92,6 +92,7 @@ async function run() {
     const bookingCollection = client.db("doctors_portal").collection("bookings");
     const userCollection = client.db("doctors_portal").collection("users");
     const doctorCollection = client.db("doctors_portal").collection("doctors");
+    const paymentCollection = client.db("doctors_portal").collection("payments");
 
     // 10. Verify user is admin or not? | verifyAdmin middleware implement
     const verifyAdmin = async (req, res, next) => {
@@ -218,6 +219,22 @@ async function run() {
       console.log('sending email');
       sendAppointmentEmail(booking);
       return res.send({ success: true, result });
+    });
+
+    // 15. Store payment on database and update appointment data as well
+    app.patch('/booking/:id', verifyJWT, async(req, res) => {
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = {_id: ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          paid: true, 
+          transactionId: payment.transactionId,
+        }
+      }
+      const result = await paymentCollection.insertOne(payment);
+      const updatedBooking = await bookingCollection.updateOne(filter, updatedDoc);
+      res.send(updatedDoc);
     });
 
     // 06. get all users
