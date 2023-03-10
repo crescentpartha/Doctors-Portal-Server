@@ -83,6 +83,41 @@ function sendAppointmentEmail(booking) {
   });
 }
 
+// payment confirmation email outline created
+function sendPaymentConfirmationEmail(booking) {
+  const { patient, patientName, treatment, date, slot } = booking;
+
+  // define email
+  const email = {
+    from: process.env.EMAIL_SENDER,
+    to: patient,
+    subject: `We have received your payment for ${treatment} is on ${date} at ${slot}`,
+    text: `Your payment for this Appointment ${treatment} is on ${date} at ${slot} is confirmed`,
+    html: `
+      <div>
+        <p>Hello ${patientName}, </p>
+        <h3>Your Appointment for ${treatment} is confirmed. Thank you for your payment.</h3>
+        <h3>We have received your payment.</h3>
+        <p>Looking forward to seeing you on ${date} at ${slot}.</p>
+        <h3>Our Address</h3>
+        <p>Subidbazar, Sylhet</p>
+        <p>Bangladesh</p>
+        <a href="https://crescentpartha.com/">unsubscribe</a>
+      </div>
+    `
+  };
+
+  // send email
+  emailClient.sendMail(email, function (err, info) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      console.log('Message send:', info);
+    }
+  });
+}
+
 async function run() {
   try {
     // await client.connect();
